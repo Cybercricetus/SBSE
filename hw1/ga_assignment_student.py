@@ -74,6 +74,7 @@ PART D — Critical Thinking (10 points)
 import random
 import copy
 from collections import defaultdict
+import numpy as np
 
 # ─────────────────────────────────────────────────────────────
 # 1. PROBLEM DATA (DO NOT MODIFY)
@@ -189,7 +190,43 @@ def evaluate(chromosome):
     """
 
     # --- Replace the line below with your implementation ---
-    return 0.0
+
+    total_score = 0
+    dev_h = [0.0 for _ in range(NUM_DEVELOPERS)]
+
+    for tidx, devidx in enumerate(chromosome):
+        task = TASKS[tidx]
+        dev = DEVELOPERS[devidx]
+        skill_lvl = dev["skills"][task["skill"]]
+        total_score += skill_lvl * task['priority']
+        dev_h[devidx] += task["hours"]
+
+    capacities = np.array([d['hours'] for d in DEVELOPERS])
+    assigned_hours = np.array(dev_h)
+    
+    # overload
+    overloads = np.maximum(assigned_hours - capacities, 0)
+    total_overload = np.sum(overloads)
+    
+    # balance
+    ratios = assigned_hours / capacities
+    ratios = np.clip(ratios, 0, 1.0) 
+    _std = np.std(ratios)
+    # input(_std)
+
+
+    max_skill = sum(t['priority'] * 10 for t in TASKS)
+    norm_skill = total_score / max_skill
+
+    task_hours = sum(t['hours'] for t in TASKS)
+    norm_overload = total_overload / task_hours
+    
+    balance_score = 1.0-_std
+
+    fitness = (W_SKILL*norm_skill)- (W_OVERLOAD * norm_overload) + (W_BALANCE * balance_score)
+
+    return fitness
+
 
 
 # ─────────────────────────────────────────────────────────────
@@ -221,9 +258,23 @@ def crossover(parent_a, parent_b):
     creates a strong positional bias. Uniform crossover treats each
     task assignment independently, which is more appropriate here.
     """
-
     # --- Replace the lines below with your implementation ---
-    return copy.copy(parent_a), copy.copy(parent_b)
+
+    if random.random() > CROSSOVER_RATE:
+        return copy.copy(parent_a), copy.copy(parent_b)
+    
+    # for safety, convert to numpy arr
+    p_a = np.array(parent_a)
+    p_b = np.array(parent_b)
+
+    # generate mask for crossover
+    mask = np.random.rand(len(p_a)) < 0.5
+
+    # corssover
+    child_a = np.where(mask, p_a, p_b)
+    child_b = np.where(mask, p_b, p_a)
+    return child_a.tolist(), child_b.tolist()
+
 
 
 def mutate(chromosome):
@@ -241,7 +292,17 @@ def mutate(chromosome):
     """
 
     # --- Replace the lines below with your implementation ---
-    return chromosome
+
+    # for safety, similarly, convert to numpy arr
+    chromosome = np.array(chromosome)
+    # generate mutation mask
+    mtt_mask = np.random.rand(len(chromosome)) < MUTATION_RATE
+    # gen random dvelopers for mutation
+    rand_devs = np.random.randint(0, NUM_DEVELOPERS, size=len(chromosome))
+    # try the mutation
+    mtt_arr = np.where(mtt_mask, rand_devs, chromosome)
+
+    return mtt_arr.tolist()
 
 
 # ─────────────────────────────────────────────────────────────
