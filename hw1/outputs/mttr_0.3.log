@@ -1,0 +1,131 @@
+======================================================================
+  PROBLEM DATA
+======================================================================
+
+  DEVELOPERS:
+  Name        Frontend  Backend  Database  Testing  Hours
+  ────────── ───────── ──────── ───────── ──────── ──────
+  Alice              9        4         3        5    35h
+  Bob                3        8         6        4    40h
+  Carol              7        5         4        8    30h
+  Dave               2        9         7        3    40h
+  Eve                6        3         2        9    35h
+  Frank              4        7         9        5    40h
+  Grace              8        6         5        7    25h
+  Hank               5        5         8        6    35h
+
+  TASKS:
+  Task                   Skill       Hours  Priority
+  ────────────────────── ────────── ────── ─────────
+  Login UI               Frontend       8h         5
+  Dashboard              Frontend      12h         4
+  REST API               Backend       10h         5
+  Auth Service           Backend        8h         5
+  DB Migration           Database       6h         4
+  Query Optimizer        Database      10h         3
+  Unit Tests             Testing        8h         4
+  Integration Tests      Testing       12h         5
+  Search Feature         Frontend      10h         3
+  Cache Layer            Backend        6h         3
+  Data Pipeline          Database       8h         4
+  E2E Tests              Testing       10h         4
+
+  Total task hours: 108h | Total capacity: 280h | Utilization target: 38.6%
+
+======================================================================
+  GA FOR SOFTWARE DEVELOPER ASSIGNMENT
+======================================================================
+  12 tasks, 8 developers
+  Search space: 8^12 = 68,719,476,736
+  Pop=80 | Gens=150 | Cx=0.85 | Mut=0.300
+  Weights: skill=0.5, overload=0.3, balance=0.2
+
+  Gen        Best     Mean Status
+  ────── ──────── ──────── ────────────────────
+  0        0.4935   0.4183 
+  1        0.5172   0.4421 ★ NEW BEST
+  2        0.5241   0.4494 ★ NEW BEST
+  3        0.5362   0.4557 ★ NEW BEST
+  6        0.5409   0.4665 ★ NEW BEST
+  7        0.5435   0.4735 ★ NEW BEST
+  8        0.5489   0.4809 ★ NEW BEST
+  9        0.5515   0.4775 ★ NEW BEST
+  10       0.5515   0.4767 
+  13       0.5627   0.4784 ★ NEW BEST
+  16       0.5706   0.4844 ★ NEW BEST
+  17       0.5818   0.4913 ★ NEW BEST
+  20       0.5818   0.4864 
+  30       0.5818   0.4981 
+  40       0.5818   0.4876 
+  45       0.5828   0.4876 ★ NEW BEST
+  50       0.5828   0.4863 
+  53       0.5900   0.4908 ★ NEW BEST
+  54       0.5926   0.4988 ★ NEW BEST
+  60       0.5926   0.4926 
+  69       0.6047   0.4927 ★ NEW BEST
+  70       0.6047   0.4886 
+  80       0.6047   0.5053 
+  90       0.6047   0.5008 
+
+  ⏹  Converged at generation 99
+
+======================================================================
+  BEST SOLUTION FOUND
+======================================================================
+
+  Chromosome: [0, 0, 3, 3, 5, 5, 2, 4, 6, 1, 7, 4]
+  Fitness:    0.6047
+
+  Developer  Tasks                                          Hours   Cap   Util Status
+  ────────── ───────────────────────────────────────────── ────── ───── ────── ──────────
+  Alice      Login UI, Dashboard                              20h   35h  57.1% ✓ OK
+  Bob        Cache Layer                                       6h   40h  15.0% ✓ OK
+  Carol      Unit Tests                                        8h   30h  26.7% ✓ OK
+  Dave       REST API, Auth Service                           18h   40h  45.0% ✓ OK
+  Eve        Integration Tests, E2E Tests                     22h   35h  62.9% ✓ OK
+  Frank      DB Migration, Query Optimizer                    16h   40h  40.0% ✓ OK
+  Grace      Search Feature                                   10h   25h  40.0% ✓ OK
+  Hank       Data Pipeline                                     8h   35h  22.9% ✓ OK
+
+  Skill Matches:
+    Alice    → Login UI             needs Frontend   skill=9/10 ★★★
+    Alice    → Dashboard            needs Frontend   skill=9/10 ★★★
+    Bob      → Cache Layer          needs Backend    skill=8/10 ★★★
+    Carol    → Unit Tests           needs Testing    skill=8/10 ★★★
+    Dave     → REST API             needs Backend    skill=9/10 ★★★
+    Dave     → Auth Service         needs Backend    skill=9/10 ★★★
+    Eve      → Integration Tests    needs Testing    skill=9/10 ★★★
+    Eve      → E2E Tests            needs Testing    skill=9/10 ★★★
+    Frank    → DB Migration         needs Database   skill=9/10 ★★★
+    Frank    → Query Optimizer      needs Database   skill=9/10 ★★★
+    Grace    → Search Feature       needs Frontend   skill=8/10 ★★★
+    Hank     → Data Pipeline        needs Database   skill=8/10 ★★★
+
+──────────────────────────────────────────────────────────────────────
+  FITNESS CONVERGENCE
+──────────────────────────────────────────────────────────────────────
+  │                                   ███████████████  0.6047
+  │                                   ███████████████
+  │                       ███████████████████████████
+  │         █████████████████████████████████████████
+  │       ███████████████████████████████████████████
+  │     █████████████████████████████████████████████
+  │   ███████████████████████████████████████████████
+  │  ████████████████████████████████████████████████
+  │ █████████████████████████████████████████████████
+  │ █████████████████████████████████████████████████
+  │██████████████████████████████████████████████████  0.4935
+  └──────────────────────────────────────────────────
+   Gen 0                                        Gen 99
+
+======================================================================
+  SUBMISSION CHECKLIST
+======================================================================
+
+    □ Part A: Written answers (A1-A4)
+    □ Part B: Completed code (evaluate, crossover, mutate) + output
+    □ Part C: Parameter experiment table + analysis
+    □ Part D: Written answers (D1-D2)
+
+    Submit: This .py file with your code + a PDF with written answers.
+    
