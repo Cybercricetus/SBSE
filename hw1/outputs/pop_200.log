@@ -43,40 +43,39 @@
   Gen        Best     Mean Status
   ────── ──────── ──────── ────────────────────
   0        0.5177   0.4221 
-  1        0.5239   0.4474 ★ NEW BEST
-  2        0.5428   0.4639 ★ NEW BEST
-  3        0.5560   0.4814 ★ NEW BEST
-  4        0.5605   0.4977 ★ NEW BEST
-  5        0.5630   0.5119 ★ NEW BEST
-  6        0.5808   0.5219 ★ NEW BEST
-  7        0.5928   0.5251 ★ NEW BEST
-  9        0.6056   0.5433 ★ NEW BEST
-  10       0.6099   0.5528 ★ NEW BEST
-  14       0.6104   0.5622 ★ NEW BEST
-  20       0.6104   0.5704 ★ NEW BEST
-  28       0.6120   0.5782 ★ NEW BEST
-  30       0.6120   0.5754 
-  31       0.6121   0.5751 ★ NEW BEST
-  40       0.6121   0.5738 
-  50       0.6121   0.5825 
-  60       0.6121   0.5812 
+  1        0.5493   0.4448 ★ NEW BEST
+  4        0.5663   0.4985 ★ NEW BEST
+  5        0.5760   0.5101 ★ NEW BEST
+  6        0.5878   0.5197 ★ NEW BEST
+  7        0.5884   0.5303 ★ NEW BEST
+  8        0.5890   0.5358 ★ NEW BEST
+  9        0.6003   0.5396 ★ NEW BEST
+  10       0.6003   0.5483 
+  12       0.6021   0.5588 ★ NEW BEST
+  13       0.6070   0.5626 ★ NEW BEST
+  15       0.6120   0.5663 ★ NEW BEST
+  17       0.6121   0.5679 ★ NEW BEST
+  20       0.6136   0.5691 ★ NEW BEST
+  30       0.6136   0.5768 
+  40       0.6136   0.5726 
+  50       0.6136   0.5734 
 
-  ⏹  Converged at generation 61
+  ⏹  Converged at generation 50
 
 ======================================================================
   BEST SOLUTION FOUND
 ======================================================================
 
-  Chromosome: [0, 6, 1, 3, 5, 7, 4, 4, 0, 3, 5, 2]
-  Fitness:    0.6121
+  Chromosome: [0, 6, 1, 3, 5, 7, 4, 2, 0, 3, 5, 4]
+  Fitness:    0.6136
 
   Developer  Tasks                                          Hours   Cap   Util Status
   ────────── ───────────────────────────────────────────── ────── ───── ────── ──────────
   Alice      Login UI, Search Feature                         18h   35h  51.4% ✓ OK
   Bob        REST API                                         10h   40h  25.0% ✓ OK
-  Carol      E2E Tests                                        10h   30h  33.3% ✓ OK
+  Carol      Integration Tests                                12h   30h  40.0% ✓ OK
   Dave       Auth Service, Cache Layer                        14h   40h  35.0% ✓ OK
-  Eve        Unit Tests, Integration Tests                    20h   35h  57.1% ✓ OK
+  Eve        Unit Tests, E2E Tests                            18h   35h  51.4% ✓ OK
   Frank      DB Migration, Data Pipeline                      14h   40h  35.0% ✓ OK
   Grace      Dashboard                                        12h   25h  48.0% ✓ OK
   Hank       Query Optimizer                                  10h   35h  28.6% ✓ OK
@@ -85,11 +84,11 @@
     Alice    → Login UI             needs Frontend   skill=9/10 ★★★
     Alice    → Search Feature       needs Frontend   skill=9/10 ★★★
     Bob      → REST API             needs Backend    skill=8/10 ★★★
-    Carol    → E2E Tests            needs Testing    skill=8/10 ★★★
+    Carol    → Integration Tests    needs Testing    skill=8/10 ★★★
     Dave     → Auth Service         needs Backend    skill=9/10 ★★★
     Dave     → Cache Layer          needs Backend    skill=9/10 ★★★
     Eve      → Unit Tests           needs Testing    skill=9/10 ★★★
-    Eve      → Integration Tests    needs Testing    skill=9/10 ★★★
+    Eve      → E2E Tests            needs Testing    skill=9/10 ★★★
     Frank    → DB Migration         needs Database   skill=9/10 ★★★
     Frank    → Data Pipeline        needs Database   skill=9/10 ★★★
     Grace    → Dashboard            needs Frontend   skill=8/10 ★★★
@@ -98,19 +97,19 @@
 ──────────────────────────────────────────────────────────────────────
   FITNESS CONVERGENCE
 ──────────────────────────────────────────────────────────────────────
-  │                               ███████████████████  0.6121
+  │                    ██████████████████████████████  0.6136
+  │             █████████████████████████████████████
   │         █████████████████████████████████████████
-  │         █████████████████████████████████████████
-  │       ███████████████████████████████████████████
   │      ████████████████████████████████████████████
-  │      ████████████████████████████████████████████
-  │   ███████████████████████████████████████████████
-  │   ███████████████████████████████████████████████
-  │  ████████████████████████████████████████████████
-  │  ████████████████████████████████████████████████
+  │     █████████████████████████████████████████████
+  │    ██████████████████████████████████████████████
+  │    ██████████████████████████████████████████████
+  │ █████████████████████████████████████████████████
+  │ █████████████████████████████████████████████████
+  │ █████████████████████████████████████████████████
   │██████████████████████████████████████████████████  0.5177
   └──────────────────────────────────────────────────
-   Gen 0                                        Gen 61
+   Gen 0                                        Gen 50
 
 ======================================================================
   SUBMISSION CHECKLIST
