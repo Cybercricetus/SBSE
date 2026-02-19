@@ -126,6 +126,8 @@ TOURNAMENT_K = 3
 ELITE_COUNT = 2
 STAGNATION_LIMIT = 30
 
+np.random.seed(42)  # set the seed for np
+
 # Fitness weights (must sum to 1.0)
 W_SKILL = 0.50      # Reward: skill match quality
 W_OVERLOAD = 0.30   # Penalty: developer overload
