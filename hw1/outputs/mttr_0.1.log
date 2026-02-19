@@ -43,79 +43,73 @@
   Gen        Best     Mean Status
   ────── ──────── ──────── ────────────────────
   0        0.4935   0.4183 
-  1        0.5179   0.4435 ★ NEW BEST
-  2        0.5265   0.4625 ★ NEW BEST
-  3        0.5596   0.4811 ★ NEW BEST
-  6        0.5741   0.5209 ★ NEW BEST
-  9        0.5813   0.5319 ★ NEW BEST
-  10       0.5813   0.5284 
-  12       0.5880   0.5423 ★ NEW BEST
-  14       0.5906   0.5463 ★ NEW BEST
-  15       0.5961   0.5549 ★ NEW BEST
-  20       0.5961   0.5567 
-  23       0.5994   0.5663 ★ NEW BEST
-  28       0.6069   0.5609 ★ NEW BEST
-  30       0.6069   0.5640 
-  32       0.6084   0.5617 ★ NEW BEST
-  40       0.6084   0.5719 
-  42       0.6120   0.5740 ★ NEW BEST
-  50       0.6120   0.5717 
-  60       0.6120   0.5760 
-  70       0.6134   0.5833 ★ NEW BEST
-  80       0.6134   0.5726 
-  90       0.6134   0.5794 
-  100      0.6134   0.5787 
+  1        0.5240   0.4402 ★ NEW BEST
+  3        0.5326   0.4757 ★ NEW BEST
+  4        0.5585   0.4907 ★ NEW BEST
+  5        0.5637   0.5068 ★ NEW BEST
+  6        0.5871   0.5257 ★ NEW BEST
+  8        0.5875   0.5443 ★ NEW BEST
+  9        0.6003   0.5466 ★ NEW BEST
+  10       0.6003   0.5524 
+  16       0.6015   0.5728 ★ NEW BEST
+  20       0.6015   0.5711 
+  29       0.6042   0.5701 ★ NEW BEST
+  30       0.6042   0.5714 
+  31       0.6061   0.5673 ★ NEW BEST
+  40       0.6061   0.5742 
+  50       0.6061   0.5719 
+  60       0.6061   0.5738 
 
-  ⏹  Converged at generation 100
+  ⏹  Converged at generation 61
 
 ======================================================================
   BEST SOLUTION FOUND
 ======================================================================
 
-  Chromosome: [0, 0, 1, 3, 5, 7, 4, 2, 6, 3, 5, 4]
-  Fitness:    0.6134
+  Chromosome: [0, 0, 1, 3, 5, 5, 2, 4, 6, 3, 7, 4]
+  Fitness:    0.6061
 
   Developer  Tasks                                          Hours   Cap   Util Status
   ────────── ───────────────────────────────────────────── ────── ───── ────── ──────────
   Alice      Login UI, Dashboard                              20h   35h  57.1% ✓ OK
   Bob        REST API                                         10h   40h  25.0% ✓ OK
-  Carol      Integration Tests                                12h   30h  40.0% ✓ OK
+  Carol      Unit Tests                                        8h   30h  26.7% ✓ OK
   Dave       Auth Service, Cache Layer                        14h   40h  35.0% ✓ OK
-  Eve        Unit Tests, E2E Tests                            18h   35h  51.4% ✓ OK
-  Frank      DB Migration, Data Pipeline                      14h   40h  35.0% ✓ OK
+  Eve        Integration Tests, E2E Tests                     22h   35h  62.9% ✓ OK
+  Frank      DB Migration, Query Optimizer                    16h   40h  40.0% ✓ OK
   Grace      Search Feature                                   10h   25h  40.0% ✓ OK
-  Hank       Query Optimizer                                  10h   35h  28.6% ✓ OK
+  Hank       Data Pipeline                                     8h   35h  22.9% ✓ OK
 
   Skill Matches:
     Alice    → Login UI             needs Frontend   skill=9/10 ★★★
     Alice    → Dashboard            needs Frontend   skill=9/10 ★★★
     Bob      → REST API             needs Backend    skill=8/10 ★★★
-    Carol    → Integration Tests    needs Testing    skill=8/10 ★★★
+    Carol    → Unit Tests           needs Testing    skill=8/10 ★★★
     Dave     → Auth Service         needs Backend    skill=9/10 ★★★
     Dave     → Cache Layer          needs Backend    skill=9/10 ★★★
-    Eve      → Unit Tests           needs Testing    skill=9/10 ★★★
+    Eve      → Integration Tests    needs Testing    skill=9/10 ★★★
     Eve      → E2E Tests            needs Testing    skill=9/10 ★★★
     Frank    → DB Migration         needs Database   skill=9/10 ★★★
-    Frank    → Data Pipeline        needs Database   skill=9/10 ★★★
+    Frank    → Query Optimizer      needs Database   skill=9/10 ★★★
     Grace    → Search Feature       needs Frontend   skill=8/10 ★★★
-    Hank     → Query Optimizer      needs Database   skill=8/10 ★★★
+    Hank     → Data Pipeline        needs Database   skill=8/10 ★★★
 
 ──────────────────────────────────────────────────────────────────────
   FITNESS CONVERGENCE
 ──────────────────────────────────────────────────────────────────────
-  │                                   ███████████████  0.6134
-  │              ████████████████████████████████████
-  │       ███████████████████████████████████████████
+  │                               ███████████████████  0.6061
+  │         █████████████████████████████████████████
+  │      ████████████████████████████████████████████
+  │      ████████████████████████████████████████████
   │     █████████████████████████████████████████████
+  │    ██████████████████████████████████████████████
+  │    ██████████████████████████████████████████████
   │   ███████████████████████████████████████████████
-  │  ████████████████████████████████████████████████
-  │  ████████████████████████████████████████████████
-  │  ████████████████████████████████████████████████
   │ █████████████████████████████████████████████████
   │ █████████████████████████████████████████████████
   │██████████████████████████████████████████████████  0.4935
   └──────────────────────────────────────────────────
-   Gen 0                                        Gen 100
+   Gen 0                                        Gen 61
 
 ======================================================================
   SUBMISSION CHECKLIST
