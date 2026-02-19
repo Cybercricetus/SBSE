@@ -39,11 +39,11 @@
 
 Based on the data listed above, I think population size has a bigger impact on the **quality** (as we are talking about the quality, I consider *fitness* as a more important factor) of the result. We can see the range of fitness: 
 
-​	$$ Range(pop) = 0.6136-0.6002 = 0.01340$$
+​	$$ Range(pop) = 0.6136-0.6039 = 0.0097$$
 
-​	$$Range(m\_rate)=0.6134 - 0.6037 = 0.0097$$
+​	$$Range(m\_rate)=0.6104 - 0.6025 = 0.0079$$
 
-Reason: A small population means a limited gene pool. The algorithm quickly makes all individuals to look identical, leading to “inbreeding” and getting stuck in local optima. This explains why convergence occurred after only 54 generations at `size=30`, yet the score remained low (premature convergence). Though mutation rate also has impact on the quality, its upper and lower limits are still constrained by the size of the population.
+Reason: A small population means a limited gene pool. The algorithm quickly makes all individuals to look identical, leading to “inbreeding” and getting stuck in local optima. With a larger population, more diverse genetic combinations are possible, and there will be higher chance to find out a better combination as the solution.  Though mutation rate also has impact on the quality, its upper and lower limits are still constrained by the size of the population. Excessively high mutation rates can disrupt the optimal gene combinations (Building Blocks) that have already been discovered. This is precisely why you say it is “**constrained by population size**”—when the population itself lacks sufficient diversity, merely increasing the mutation rate will cause the algorithm to degenerate into pure random walk behavior, preventing stable convergence to high-quality solutions.
 
 ## Part D
 
