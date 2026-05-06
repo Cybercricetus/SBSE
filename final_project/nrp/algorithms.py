@@ -239,7 +239,7 @@ def genetic_algorithm(
     mut_prob: float | None = None,    # per-bit; default 1/n
     tournsize: int = 3,
     elitism: int = 2,
-    seed: int = 0,
+    seed: int = 42,
     # ---- self-adaptive mutation rate (1/5 success rule, Rechenberg 1973) ----
     adaptive_mut: bool = False,
     mut_window: int = 5,         # adapt every `mut_window` generations
