@@ -48,17 +48,13 @@ for inst in "${instances[@]}"; do
     short="${name#nrp-}"                       # e.g. e1
     out_stem="${RESULTS_DIR}/${short}_${ratio_tag}"
 
-    printf '[%-6s] ' "${short}"
+    echo
+    echo "================================================================"
+    echo "  [${short}]  ratio=${RATIO}  runs=${RUNS}  evals=${EVALS}"
+    echo "================================================================"
     inst_start=$(date +%s)
 
-    {
-        echo
-        echo "================================================================"
-        echo "INSTANCE: ${name}    ratio=${RATIO}    runs=${RUNS}    evals=${EVALS}"
-        echo "================================================================"
-    } >> "${LOG_FILE}"
-
-    if python main.py \
+    if python -u main.py \
         --instance "${inst}" \
         --cost-ratio "${RATIO}" \
         --runs "${RUNS}" \
@@ -66,13 +62,14 @@ for inst in "${instances[@]}"; do
         --seed "${SEED}" \
         --output "${out_stem}.json" \
         --plot "${out_stem}" \
-        >> "${LOG_FILE}" 2>&1
+        2>&1 | tee -a "${LOG_FILE}"
     then
         elapsed=$(( $(date +%s) - inst_start ))
-        printf 'done in %3dm%02ds  -> %s.json\n' \
-            $((elapsed / 60)) $((elapsed % 60)) "${out_stem}"
+        printf '[%s] done in %dm%02ds  ->  %s.json\n' \
+            "${short}" $((elapsed / 60)) $((elapsed % 60)) "${out_stem}" \
+            | tee -a "${LOG_FILE}"
     else
-        printf 'FAILED (see %s)\n' "${LOG_FILE}"
+        echo "[${short}] FAILED" | tee -a "${LOG_FILE}"
         exit 1
     fi
 done
