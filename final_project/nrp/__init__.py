@@ -7,6 +7,7 @@ from .algorithms import (
     hill_climbing,
     simulated_annealing,
     genetic_algorithm,
+    adaptive_genetic_algorithm,
 )
 from .experiment import run_experiment, summarize, wilcoxon_vs_baseline
 
@@ -19,6 +20,7 @@ __all__ = [
     "hill_climbing",
     "simulated_annealing",
     "genetic_algorithm",
+    "adaptive_genetic_algorithm",
     "run_experiment",
     "summarize",
     "wilcoxon_vs_baseline",

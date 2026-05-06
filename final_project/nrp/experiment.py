@@ -142,6 +142,7 @@ def save_results(results: Dict[str, List[RunResult]], path: str | Path) -> None:
                 "best_profit": r.best.profit,
                 "best_cost": r.best.cost,
                 "history": r.history,
+                "meta": r.meta,
             }
             for r in runs
         ]

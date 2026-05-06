@@ -68,3 +68,49 @@ def plot_box(
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150)
     plt.close(fig)
+
+
+def plot_mut_trajectory(
+    results: Dict[str, List[RunResult]],
+    out_path: str | Path,
+    title: str = "",
+    n_reqs: int | None = None,
+):
+    """Plot mut_prob trajectory across runs for any algorithm with self-adaptation.
+
+    Filters to runs whose ``meta['adaptive_mut']`` is True. Y-axis is shown
+    in units of ``k/n`` where n = problem.n_reqs, so values are interpretable
+    against the conventional 1/n default.
+    """
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    plotted = False
+    for name, runs in results.items():
+        for r in runs:
+            traj = r.meta.get("mut_trajectory") if r.meta else None
+            if not traj:
+                continue
+            evals = [t[0] for t in traj]
+            probs = [t[1] for t in traj]
+            if n_reqs is not None:
+                probs = [p * n_reqs for p in probs]
+            ax.plot(evals, probs, color="C0", alpha=0.25, linewidth=1)
+            plotted = True
+
+    if not plotted:
+        plt.close(fig)
+        return  # no adaptive runs - skip silently
+
+    ax.set_xlabel("Fitness evaluations")
+    ax.set_ylabel("Mutation rate (units of 1/n)" if n_reqs else "Mutation rate (per bit)")
+    ax.set_yscale("log")
+    ax.axhline(1.0 if n_reqs else 1.0 / (n_reqs or 1), color="gray",
+               linestyle="--", linewidth=1, label="default 1/n")
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(True, alpha=0.3, which="both")
+    fig.tight_layout()
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)

@@ -21,6 +21,7 @@ from nrp import (
     hill_climbing,
     simulated_annealing,
     genetic_algorithm,
+    adaptive_genetic_algorithm,
     run_experiment,
     summarize,
     wilcoxon_vs_baseline,
@@ -41,8 +42,8 @@ def parse_args():
     p.add_argument("--seed", type=int, default=0,
                    help="Base seed; run-i uses seed = base + i.")
     p.add_argument("--algorithms", nargs="+",
-                   default=["random", "hc", "sa", "ga"],
-                   choices=["random", "hc", "sa", "ga"],
+                   default=["random", "hc", "sa", "ga", "aga"],
+                   choices=["random", "hc", "sa", "ga", "aga"],
                    help="Subset of algorithms to run.")
     p.add_argument("--output", type=str, default=None,
                    help="JSON path to dump full per-run results (history etc.)")
@@ -56,6 +57,7 @@ ALGO_REGISTRY = {
     "hc": hill_climbing,
     "sa": simulated_annealing,
     "ga": genetic_algorithm,
+    "aga": adaptive_genetic_algorithm,
 }
 
 
@@ -103,13 +105,19 @@ def main():
         print(f"\nSaved per-run results to {out}")
 
     if args.plot:
-        from nrp.plotting import plot_convergence, plot_box
+        from nrp.plotting import plot_convergence, plot_box, plot_mut_trajectory
         stem = Path(args.plot)
         stem.parent.mkdir(parents=True, exist_ok=True)
         title = f"{problem.instance_name}  ratio={problem.cost_ratio}  runs={args.runs}  evals={args.evals}"
         plot_convergence(results, stem.with_name(stem.stem + "_convergence.png"), title=title)
         plot_box(results, stem.with_name(stem.stem + "_box.png"), title=title)
-        print(f"Saved plots: {stem.stem}_convergence.png, {stem.stem}_box.png")
+        plot_mut_trajectory(
+            results,
+            stem.with_name(stem.stem + "_muttraj.png"),
+            title=title + "  -- adaptive mutation rate",
+            n_reqs=problem.n_reqs,
+        )
+        print(f"Saved plots: {stem.stem}_convergence.png, {stem.stem}_box.png, {stem.stem}_muttraj.png")
 
 
 if __name__ == "__main__":

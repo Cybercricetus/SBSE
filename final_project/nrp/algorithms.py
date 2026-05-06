@@ -42,6 +42,7 @@ class RunResult:
     runtime_seconds: float
     n_evaluations: int
     seed: int
+    meta: dict = field(default_factory=dict)  # algorithm-specific extras (e.g. mut_prob trajectory)
 
 
 # ---------------------------------------------------------------------------
@@ -239,21 +240,37 @@ def genetic_algorithm(
     tournsize: int = 3,
     elitism: int = 2,
     seed: int = 0,
+    # ---- self-adaptive mutation rate (1/5 success rule, Rechenberg 1973) ----
+    adaptive_mut: bool = False,
+    mut_window: int = 5,         # adapt every `mut_window` generations
+    mut_target: float = 0.2,     # target success rate (1/5 rule)
+    mut_factor: float = 1.2,     # multiplicative step
+    mut_min_mult: float = 1.0,   # min mut_prob = mut_min_mult / n_reqs
+    mut_max: float = 0.5,        # absolute upper bound on per-bit rate
 ) -> RunResult:
     """Generational GA implemented on top of DEAP.
 
     Operators:
       - selection   : tournament (size 3) + elitism, via DEAP
       - crossover   : uniform (per-bit swap with prob 0.5), numpy-vectorized
-      - mutation    : per-bit flip with rate 1/n, numpy-vectorized
+      - mutation    : per-bit flip with rate ``mut_prob`` (default 1/n),
+                      numpy-vectorized
       - constraints : repair-on-evaluation
 
-    Implementation note
-    -------------------
-    Individuals are stored as an ``ndarray`` subclass rather than a Python
-    ``list``. With n_reqs ~= 3500 the list<->numpy conversion overhead in
-    DEAP's stock operators dominated runtime; backing the genome with
-    a numpy array eliminates that conversion entirely.
+    Self-adaptive mutation rate
+    ---------------------------
+    When ``adaptive_mut=True``, the per-bit mutation rate is updated every
+    ``mut_window`` generations using a generation-level analogue of the
+    Rechenberg 1/5 success rule. "Success" of generation g is defined as
+    ``best_so_far`` having improved during g. If the success rate over the
+    most recent window exceeds ``mut_target`` (=1/5), the rate is multiplied
+    by ``mut_factor``; below the target it is divided. The rate is clamped
+    to ``[mut_min_mult / n_reqs, mut_max]``.
+
+    Why this works on NRP: early in the run improvements are easy to find
+    (success rate near 1) so the rate is pushed up, encouraging exploration;
+    late in the run improvements are rare (success rate near 0) so the rate
+    drops, encouraging refinement.
     """
     import random as _stdrandom
     from deap import base, creator, tools
@@ -264,6 +281,12 @@ def genetic_algorithm(
 
     if mut_prob is None:
         mut_prob = 1.0 / problem.n_reqs
+
+    # Mutable holder so the mutation closure reads the *current* rate even
+    # after self-adaptation updates it. DEAP captures the rate at register
+    # time, so binding through a dict is the simplest re-binding.
+    mut_state = {"prob": float(mut_prob)}
+    mut_min = mut_min_mult / problem.n_reqs
 
     # Fitness class (created once, globally) - DEAP idiom
     if not hasattr(creator, "_NRP_FitnessMax"):
@@ -309,9 +332,11 @@ def genetic_algorithm(
         ind2[swap] = tmp
         return ind1, ind2
 
-    def mut_flip_np(ind: NRPInd, indpb: float = mut_prob):
-        """In-place per-bit flip mutation."""
-        flip = np_rng.random(len(ind)) < indpb
+    def mut_flip_np(ind: NRPInd, indpb: float | None = None):
+        """In-place per-bit flip mutation. Reads the current rate from
+        ``mut_state['prob']`` so self-adaptive updates take effect."""
+        rate = mut_state["prob"] if indpb is None else indpb
+        flip = np_rng.random(len(ind)) < rate
         if flip.any():
             ind[flip] = 1 - ind[flip]
         return (ind,)
@@ -321,7 +346,7 @@ def genetic_algorithm(
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("evaluate", evaluate_ind)
     toolbox.register("mate", cx_uniform_np, indpb=0.5)
-    toolbox.register("mutate", mut_flip_np, indpb=mut_prob)
+    toolbox.register("mutate", mut_flip_np)  # rate read from mut_state at call time
     toolbox.register("select", tools.selTournament, tournsize=tournsize)
 
     # ----- evolution loop with explicit eval budget -----
@@ -339,7 +364,14 @@ def genetic_algorithm(
     best = _best_in_pop()
     history = [best.profit] * evals  # backfill so len(history) == evals
 
+    # ---- self-adaptation bookkeeping ----
+    from collections import deque
+    success_window = deque(maxlen=mut_window)
+    mut_trajectory: list[tuple[int, float]] = [(evals, mut_state["prob"])]
+
     while evals < max_evals:
+        prev_best = best.profit  # for success-rate tracking this generation
+
         # Elitism: top-K, single selection call then clone
         elite_src = tools.selBest(pop, elitism)
         elites = []
@@ -383,14 +415,49 @@ def genetic_algorithm(
 
         pop[:] = elites + offspring
 
+        # ---- self-adaptive mutation rate update (1/5 success rule) ----
+        if adaptive_mut:
+            success_window.append(1 if best.profit > prev_best else 0)
+            if len(success_window) == mut_window:
+                success_rate = sum(success_window) / mut_window
+                if success_rate > mut_target:
+                    mut_state["prob"] = min(mut_state["prob"] * mut_factor, mut_max)
+                elif success_rate < mut_target:
+                    mut_state["prob"] = max(mut_state["prob"] / mut_factor, mut_min)
+                # ties (success_rate == mut_target): no change
+                mut_trajectory.append((evals, mut_state["prob"]))
+
     return RunResult(
-        algorithm="GeneticAlgorithm",
+        algorithm="AdaptiveGA" if adaptive_mut else "GeneticAlgorithm",
         best=best,
         history=history[:max_evals],
         runtime_seconds=time.perf_counter() - timer_start,
         n_evaluations=evals,
         seed=seed,
+        meta={
+            "mut_prob_initial": float(mut_prob),
+            "mut_prob_final": float(mut_state["prob"]),
+            "mut_trajectory": mut_trajectory if adaptive_mut else [],
+            "adaptive_mut": adaptive_mut,
+        },
     )
+
+
+def adaptive_genetic_algorithm(
+    problem: NRPProblem,
+    max_evals: int,
+    rng: np.random.Generator,
+    *,
+    seed: int = 0,
+    **kwargs,
+) -> RunResult:
+    """GA with self-adaptive mutation rate (1/5 success rule).
+
+    Convenience wrapper: thin alias for ``genetic_algorithm(..., adaptive_mut=True)``
+    so it can be plugged into the algorithm registry.
+    """
+    kwargs.setdefault("adaptive_mut", True)
+    return genetic_algorithm(problem, max_evals=max_evals, rng=rng, seed=seed, **kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -402,4 +469,5 @@ ALGORITHMS: dict[str, Callable] = {
     "hc": hill_climbing,
     "sa": simulated_annealing,
     "ga": genetic_algorithm,
+    "aga": adaptive_genetic_algorithm,
 }
