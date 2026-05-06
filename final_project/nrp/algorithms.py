@@ -243,50 +243,85 @@ def genetic_algorithm(
     """Generational GA implemented on top of DEAP.
 
     Operators:
-      - selection   : tournament (size 3) + elitism
-      - crossover   : uniform (per-bit swap with prob 0.5)
-      - mutation    : per-bit flip with rate 1/n
+      - selection   : tournament (size 3) + elitism, via DEAP
+      - crossover   : uniform (per-bit swap with prob 0.5), numpy-vectorized
+      - mutation    : per-bit flip with rate 1/n, numpy-vectorized
       - constraints : repair-on-evaluation
+
+    Implementation note
+    -------------------
+    Individuals are stored as an ``ndarray`` subclass rather than a Python
+    ``list``. With n_reqs ~= 3500 the list<->numpy conversion overhead in
+    DEAP's stock operators dominated runtime; backing the genome with
+    a numpy array eliminates that conversion entirely.
     """
-    # DEAP's RNG is the stdlib `random`; seed it for reproducibility.
     import random as _stdrandom
     from deap import base, creator, tools
 
     timer_start = time.perf_counter()
     _stdrandom.seed(seed)
-    np_rng = rng  # for our own random ops
+    np_rng = rng
 
     if mut_prob is None:
         mut_prob = 1.0 / problem.n_reqs
 
-    # creator classes are global in DEAP - guard against duplicate creation
+    # Fitness class (created once, globally) - DEAP idiom
     if not hasattr(creator, "_NRP_FitnessMax"):
         creator.create("_NRP_FitnessMax", base.Fitness, weights=(1.0,))
-        creator.create("_NRP_Individual", list, fitness=creator._NRP_FitnessMax)
+    Fitness = creator._NRP_FitnessMax
 
-    Individual = creator._NRP_Individual
+    # ndarray-backed Individual: keeps DEAP's selection tools happy
+    # (they only need a `.fitness` attribute), but avoids all list<->numpy
+    # conversion in the hot path.
+    class NRPInd(np.ndarray):
+        def __array_finalize__(self, obj):
+            # Intentionally a no-op. Numpy creates temporary NRPInd views
+            # inside cx/mut (boolean indexing, slicing, .copy()); allocating
+            # a Fitness for each is wasted work. Instead we set ``.fitness``
+            # explicitly at the only two sites that need it: initialization
+            # and explicit clone in the GA main loop.
+            pass
 
-    toolbox = base.Toolbox()
-    toolbox.register("attr_bool", _stdrandom.random)  # placeholder
+    def _attach_fitness(ind: "NRPInd") -> "NRPInd":
+        ind.fitness = Fitness()
+        return ind
 
-    def init_individual():
-        # Bias toward cost_ratio density to keep early pop near budget
+    def make_individual(bits: np.ndarray) -> NRPInd:
+        return _attach_fitness(bits.astype(np.int8).view(NRPInd))
+
+    def init_individual() -> NRPInd:
         bits = (np_rng.random(problem.n_reqs) < problem.cost_ratio).astype(np.int8)
-        return Individual(bits.tolist())
+        return make_individual(bits)
 
-    toolbox.register("individual", init_individual)
-    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-    def evaluate_ind(ind):
-        bits = np.asarray(ind, dtype=bool)
-        sol = _eval(problem, bits)
-        # write back the (possibly repaired) genotype so children are valid
-        ind[:] = sol.bits.astype(np.int8).tolist()
+    def evaluate_ind(ind: NRPInd):
+        """Repair-on-eval. Writes repaired bits back into ind (in place)."""
+        sol = _eval(problem, ind)
+        # In-place writeback: numpy array assignment, ~1us for n=3500
+        ind[:] = sol.bits.astype(np.int8)
         return (sol.profit,)
 
+    def cx_uniform_np(ind1: NRPInd, ind2: NRPInd, indpb: float = 0.5):
+        """In-place uniform crossover via boolean-mask swap."""
+        swap = np_rng.random(len(ind1)) < indpb
+        # Single tmp buffer; standard 3-way swap on the masked positions
+        tmp = ind1[swap].copy()
+        ind1[swap] = ind2[swap]
+        ind2[swap] = tmp
+        return ind1, ind2
+
+    def mut_flip_np(ind: NRPInd, indpb: float = mut_prob):
+        """In-place per-bit flip mutation."""
+        flip = np_rng.random(len(ind)) < indpb
+        if flip.any():
+            ind[flip] = 1 - ind[flip]
+        return (ind,)
+
+    toolbox = base.Toolbox()
+    toolbox.register("individual", init_individual)
+    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("evaluate", evaluate_ind)
-    toolbox.register("mate", tools.cxUniform, indpb=0.5)
-    toolbox.register("mutate", tools.mutFlipBit, indpb=mut_prob)
+    toolbox.register("mate", cx_uniform_np, indpb=0.5)
+    toolbox.register("mutate", mut_flip_np, indpb=mut_prob)
     toolbox.register("select", tools.selTournament, tournsize=tournsize)
 
     # ----- evolution loop with explicit eval budget -----
@@ -295,27 +330,31 @@ def genetic_algorithm(
         ind.fitness.values = toolbox.evaluate(ind)
     evals = pop_size
 
-    # Track best
-    def _best(pop):
+    def _best_in_pop():
         i = max(range(len(pop)), key=lambda k: pop[k].fitness.values[0])
         bits = np.asarray(pop[i], dtype=bool)
-        return Solution(bits, int(pop[i].fitness.values[0]), problem.total_cost(bits))
+        return Solution(bits.copy(), int(pop[i].fitness.values[0]),
+                        problem.total_cost(bits))
 
-    best = _best(pop)
-    history = [best.profit] * evals  # backfill so length equals evals
+    best = _best_in_pop()
+    history = [best.profit] * evals  # backfill so len(history) == evals
 
     while evals < max_evals:
-        # Elitism: carry over top-K
-        elites = tools.selBest(pop, elitism)
-        elites = [Individual(e[:]) for e in elites]
-        for e, src in zip(elites, tools.selBest(pop, elitism)):
-            e.fitness.values = src.fitness.values
+        # Elitism: top-K, single selection call then clone
+        elite_src = tools.selBest(pop, elitism)
+        elites = []
+        for e in elite_src:
+            clone = _attach_fitness(e.copy())
+            clone.fitness.values = e.fitness.values
+            elites.append(clone)
 
-        # Parents -> offspring
-        offspring = toolbox.select(pop, pop_size - elitism)
-        offspring = [Individual(o[:]) for o in offspring]
-        for o, src in zip(offspring, toolbox.select(pop, pop_size - elitism)):
-            o.fitness.values = src.fitness.values
+        # Parents: tournament selection, single call then clone
+        parent_src = toolbox.select(pop, pop_size - elitism)
+        offspring = []
+        for o in parent_src:
+            clone = _attach_fitness(o.copy())
+            clone.fitness.values = o.fitness.values
+            offspring.append(clone)
 
         # Variation
         for c1, c2 in zip(offspring[::2], offspring[1::2]):
@@ -328,20 +367,18 @@ def genetic_algorithm(
             del m.fitness.values
 
         # Evaluate offspring respecting the eval budget
-        invalid = [ind for ind in offspring if not ind.fitness.valid]
-        for ind in invalid:
+        for ind in offspring:
+            if ind.fitness.valid:
+                continue
             if evals >= max_evals:
-                # Use parent fitness as fallback (assigned an arbitrary low value
-                # only if it was deleted - ensure something exists)
                 ind.fitness.values = (0,)
                 continue
             ind.fitness.values = toolbox.evaluate(ind)
             evals += 1
-            # update best & history each eval to keep parity with HC/SA traces
             f = ind.fitness.values[0]
             if f > best.profit:
                 bits = np.asarray(ind, dtype=bool)
-                best = Solution(bits, int(f), problem.total_cost(bits))
+                best = Solution(bits.copy(), int(f), problem.total_cost(bits))
             history.append(best.profit)
 
         pop[:] = elites + offspring
