@@ -1,6 +1,6 @@
 final_project/data/*
 !final_project/data/.gitkeep
 final_project/nrp/__pycache__/*
-final_project/nrp/results/*
-!final_project/nrp/results/.gitkeep
+final_project/results/*
+!final_project/results/.gitkeep
 .venv
