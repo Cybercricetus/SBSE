@@ -1,7 +1,4 @@
-"""Experiment harness: run each algorithm multiple times, aggregate, run
-Wilcoxon signed-rank tests vs the random-search baseline.
-
-Output is JSON-serialisable so we can dump per-run history for plotting later.
+"""Experiments; using Xuan's data...
 """
 
 from __future__ import annotations
@@ -18,9 +15,6 @@ from .algorithms import RunResult
 from .problem import NRPProblem
 
 
-# ---------------------------------------------------------------------------
-# Multi-run experiment
-# ---------------------------------------------------------------------------
 
 def run_experiment(
     problem: NRPProblem,
@@ -31,12 +25,6 @@ def run_experiment(
     verbose: bool = True,
     algo_kwargs: Dict[str, dict] | None = None,
 ) -> Dict[str, List[RunResult]]:
-    """Run every algorithm `n_runs` times with paired seeds.
-
-    Paired seeds (same seed for all algorithms in run-i) make the Wilcoxon
-    signed-rank test more powerful, since shared randomness in the random
-    initial solution removes some variance.
-    """
     algo_kwargs = algo_kwargs or {}
     results: Dict[str, List[RunResult]] = {name: [] for name in algorithms}
 
@@ -60,7 +48,7 @@ def run_experiment(
 
 
 # ---------------------------------------------------------------------------
-# Summary statistics
+#Stats
 # ---------------------------------------------------------------------------
 
 def summarize(results: Dict[str, List[RunResult]]) -> Dict[str, dict]:
@@ -82,7 +70,7 @@ def summarize(results: Dict[str, List[RunResult]]) -> Dict[str, dict]:
 
 
 # ---------------------------------------------------------------------------
-# Wilcoxon signed-rank tests
+#Wilcoxon signed-rank tests
 # ---------------------------------------------------------------------------
 
 def wilcoxon_vs_baseline(
@@ -127,7 +115,7 @@ def wilcoxon_vs_baseline(
 
 
 # ---------------------------------------------------------------------------
-# Persistence
+#SAVE to disk
 # ---------------------------------------------------------------------------
 
 def save_results(results: Dict[str, List[RunResult]], path: str | Path) -> None:

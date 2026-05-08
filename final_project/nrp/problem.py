@@ -1,16 +1,4 @@
-"""NRP file parsing and problem representation.
-
-File format (Xuan et al. 2012 NRP benchmark):
-    1                            # header constant
-    n_reqs                       # number of requirements
-    c_1 c_2 ... c_n              # cost of each requirement (whitespace separated)
-    0                            # header constant
-    n_customers                  # number of customers
-    p_i q_i r_1 r_2 ... r_qi     # profit, num requested, requirement IDs (1-based)
-    ...
-
-Reference: J. Xuan et al., "Solving the Large Scale Next Release Problem
-with a Backbone Based Multilevel Algorithm", IEEE TSE 38(5), 2012.
+"""NRP problem parser files
 """
 
 from __future__ import annotations
@@ -24,16 +12,10 @@ from scipy.sparse import csr_matrix
 
 
 # ---------------------------------------------------------------------------
-# Parsing
+# Parsers
 # ---------------------------------------------------------------------------
 
 def _stream_tokens(path: Path):
-    """Yield whitespace-separated tokens from a file lazily.
-
-    Lines starting with '^' (or with a leading '^' token) are treated as
-    comments and skipped. This is needed for ``example.txt`` which annotates
-    each section; the real ``nrp-*.txt`` instances do not contain comments.
-    """
     with open(path, "r") as f:
         for line in f:
             stripped = line.lstrip()
@@ -44,16 +26,6 @@ def _stream_tokens(path: Path):
 
 
 def parse_nrp_file(path: str | Path, cost_ratio: float = 0.3) -> "NRPProblem":
-    """Parse an NRP instance file.
-
-    Parameters
-    ----------
-    path : str or Path
-        Path to the .txt instance file.
-    cost_ratio : float
-        Budget ratio in (0, 1). Budget = cost_ratio * total_cost.
-        Typical values: 0.3 or 0.5 (0.7 yields trivial instances).
-    """
     path = Path(path)
     tokens = _stream_tokens(path)
 
@@ -109,17 +81,11 @@ def parse_nrp_file(path: str | Path, cost_ratio: float = 0.3) -> "NRPProblem":
 
 
 # ---------------------------------------------------------------------------
-# Problem class
+# Problem definitions
 # ---------------------------------------------------------------------------
 
 @dataclass
 class NRPProblem:
-    """Single-level Next Release Problem.
-
-    Decision variable: x in {0,1}^n where n = number of requirements.
-    Maximize total profit from satisfied customers under a budget constraint.
-    A customer is "satisfied" iff every requirement they request is selected.
-    """
 
     instance_name: str
     costs: np.ndarray              # shape (n_reqs,) int64
@@ -177,7 +143,7 @@ class NRPProblem:
         return len(self.profits)
 
     # ------------------------------------------------------------------
-    # Evaluation
+    # Eval
     # ------------------------------------------------------------------
 
     def total_cost(self, bits: np.ndarray) -> int:
@@ -197,7 +163,7 @@ class NRPProblem:
         return prof, cost, cost <= self.budget
 
     # ------------------------------------------------------------------
-    # Repair heuristic - greedy removal until feasible
+    #Repair heuristic - greedy removal until feasible
     # ------------------------------------------------------------------
 
     def repair(self, bits: np.ndarray) -> np.ndarray:
@@ -223,7 +189,7 @@ class NRPProblem:
         return bits
 
     # ------------------------------------------------------------------
-    # Random feasible solution
+    #Random feasible solution
     # ------------------------------------------------------------------
 
     def random_solution(self, rng: np.random.Generator, p: float | None = None) -> np.ndarray:
@@ -234,7 +200,7 @@ class NRPProblem:
         return self.repair(bits)
 
     # ------------------------------------------------------------------
-    # Pretty info
+    # Format it, making it looks better
     # ------------------------------------------------------------------
 
     def info(self) -> str:

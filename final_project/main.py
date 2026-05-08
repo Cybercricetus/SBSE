@@ -1,13 +1,4 @@
-"""CLI entry point for Track A experiments.
-
-Examples
---------
-# Smoke test on the small example file
-python main.py --instance data/example.txt --runs 3 --evals 5000
-
-# Full run on classic instance
-python main.py --instance data/nrp-e1.txt --runs 30 --evals 50000 \\
-    --cost-ratio 0.3 --output results/e1_r03.json
+"""Main file. parser of flags; entry.
 """
 
 from __future__ import annotations

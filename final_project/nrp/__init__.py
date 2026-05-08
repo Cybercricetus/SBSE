@@ -1,4 +1,3 @@
-"""Single-objective Next Release Problem (NRP) - Track A."""
 from .problem import NRPProblem, parse_nrp_file
 from .algorithms import (
     Solution,

@@ -1,12 +1,5 @@
-"""Search algorithms for the single-objective NRP.
-
-All algorithms share the signature:
-
-    def algorithm(problem, max_evals, rng, **kwargs) -> RunResult
-
-and use the same evaluation budget so cross-algorithm comparison is fair.
-Constraints are handled via repair (high-cost-first removal) inside
-``problem.repair``; this keeps the comparison clean of penalty tuning.
+"""This is the file that we implement the algorithms to test and modify.
+Random, GA, SA, HC, and Adaptive GA.
 """
 
 from __future__ import annotations
@@ -21,7 +14,7 @@ from .problem import NRPProblem
 
 
 # ---------------------------------------------------------------------------
-# Common dataclasses
+# Make it standard in form...
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -38,15 +31,15 @@ class Solution:
 class RunResult:
     algorithm: str
     best: Solution
-    history: List[int]            # best-so-far profit at each evaluation milestone
+    history: List[int]            #Best-so-far profit at each evaluation milestone
     runtime_seconds: float
     n_evaluations: int
     seed: int
-    meta: dict = field(default_factory=dict)  # algorithm-specific extras (e.g. mut_prob trajectory)
+    meta: dict = field(default_factory=dict)  # Algorithm-specific extras (e.g. mut_prob trajectory)
 
 
 # ---------------------------------------------------------------------------
-# Helper: evaluate a bitstring with repair, return Solution
+# helper
 # ---------------------------------------------------------------------------
 
 def _eval(problem: NRPProblem, bits: np.ndarray) -> Solution:
@@ -58,7 +51,7 @@ def _eval(problem: NRPProblem, bits: np.ndarray) -> Solution:
 
 
 # ---------------------------------------------------------------------------
-# 1) Random Search baseline
+# random: baseline
 # ---------------------------------------------------------------------------
 
 def random_search(
@@ -93,7 +86,7 @@ def random_search(
 
 
 # ---------------------------------------------------------------------------
-# 2) (Stochastic) Hill Climbing with random restarts
+# Hill Climbing
 # ---------------------------------------------------------------------------
 
 def hill_climbing(
@@ -104,12 +97,6 @@ def hill_climbing(
     restart_after: int = 2000,
     seed: int = 0,
 ) -> RunResult:
-    """Stochastic 1-bit-flip hill climbing with random restart on stagnation.
-
-    Each iteration: flip one random bit, accept if profit improves (or equals
-    with a probability tiebreaker disabled here). Restart from a random
-    solution after ``restart_after`` consecutive non-improving evaluations.
-    """
     t0 = time.perf_counter()
 
     current = _eval(problem, rng.random(problem.n_reqs) < problem.cost_ratio)
@@ -156,7 +143,7 @@ def hill_climbing(
 
 
 # ---------------------------------------------------------------------------
-# 3) Simulated Annealing
+#Simulated Annealing
 # ---------------------------------------------------------------------------
 
 def simulated_annealing(
@@ -169,11 +156,6 @@ def simulated_annealing(
     t_min: float = 1e-3,
     seed: int = 0,
 ) -> RunResult:
-    """Boltzmann-acceptance SA with geometric cooling.
-
-    If ``t0`` is None, it is auto-tuned so the initial acceptance probability
-    of a typical worsening move is ~0.5 (Kirkpatrick-style).
-    """
     timer_start = time.perf_counter()
 
     current = _eval(problem, rng.random(problem.n_reqs) < problem.cost_ratio)
@@ -226,7 +208,7 @@ def simulated_annealing(
 
 
 # ---------------------------------------------------------------------------
-# 4) Genetic Algorithm (DEAP)
+# Adaptive/GA, can select; use np to optimize
 # ---------------------------------------------------------------------------
 
 def genetic_algorithm(
@@ -236,42 +218,18 @@ def genetic_algorithm(
     *,
     pop_size: int = 100,
     cx_prob: float = 0.8,
-    mut_prob: float | None = None,    # per-bit; default 1/n
+    mut_prob: float | None = None, 
     tournsize: int = 3,
     elitism: int = 2,
     seed: int = 42,
-    # ---- self-adaptive mutation rate (1/5 success rule, Rechenberg 1973) ----
+    # ---- here are our adaptive version... ----
     adaptive_mut: bool = False,
-    mut_window: int = 5,         # adapt every `mut_window` generations
-    mut_target: float = 0.2,     # target success rate (1/5 rule)
-    mut_factor: float = 1.2,     # multiplicative step
-    mut_min_mult: float = 1.0,   # min mut_prob = mut_min_mult / n_reqs
-    mut_max: float = 0.5,        # absolute upper bound on per-bit rate
+    mut_window: int = 5,         # Adapt every mut_window generations
+    mut_target: float = 0.2,     # Target success rate (1/5 rule)
+    mut_factor: float = 1.2,     # Multiplicative step
+    mut_min_mult: float = 1.0,   # Min mut_prob = mut_min_mult / n_reqs
+    mut_max: float = 0.5,        # abs upper bound on per-bit rate
 ) -> RunResult:
-    """Generational GA implemented on top of DEAP.
-
-    Operators:
-      - selection   : tournament (size 3) + elitism, via DEAP
-      - crossover   : uniform (per-bit swap with prob 0.5), numpy-vectorized
-      - mutation    : per-bit flip with rate ``mut_prob`` (default 1/n),
-                      numpy-vectorized
-      - constraints : repair-on-evaluation
-
-    Self-adaptive mutation rate
-    ---------------------------
-    When ``adaptive_mut=True``, the per-bit mutation rate is updated every
-    ``mut_window`` generations using a generation-level analogue of the
-    Rechenberg 1/5 success rule. "Success" of generation g is defined as
-    ``best_so_far`` having improved during g. If the success rate over the
-    most recent window exceeds ``mut_target`` (=1/5), the rate is multiplied
-    by ``mut_factor``; below the target it is divided. The rate is clamped
-    to ``[mut_min_mult / n_reqs, mut_max]``.
-
-    Why this works on NRP: early in the run improvements are easy to find
-    (success rate near 1) so the rate is pushed up, encouraging exploration;
-    late in the run improvements are rare (success rate near 0) so the rate
-    drops, encouraging refinement.
-    """
     import random as _stdrandom
     from deap import base, creator, tools
 
@@ -281,28 +239,15 @@ def genetic_algorithm(
 
     if mut_prob is None:
         mut_prob = 1.0 / problem.n_reqs
-
-    # Mutable holder so the mutation closure reads the *current* rate even
-    # after self-adaptation updates it. DEAP captures the rate at register
-    # time, so binding through a dict is the simplest re-binding.
     mut_state = {"prob": float(mut_prob)}
     mut_min = mut_min_mult / problem.n_reqs
 
-    # Fitness class (created once, globally) - DEAP idiom
     if not hasattr(creator, "_NRP_FitnessMax"):
         creator.create("_NRP_FitnessMax", base.Fitness, weights=(1.0,))
     Fitness = creator._NRP_FitnessMax
 
-    # ndarray-backed Individual: keeps DEAP's selection tools happy
-    # (they only need a `.fitness` attribute), but avoids all list<->numpy
-    # conversion in the hot path.
     class NRPInd(np.ndarray):
         def __array_finalize__(self, obj):
-            # Intentionally a no-op. Numpy creates temporary NRPInd views
-            # inside cx/mut (boolean indexing, slicing, .copy()); allocating
-            # a Fitness for each is wasted work. Instead we set ``.fitness``
-            # explicitly at the only two sites that need it: initialization
-            # and explicit clone in the GA main loop.
             pass
 
     def _attach_fitness(ind: "NRPInd") -> "NRPInd":
@@ -415,7 +360,7 @@ def genetic_algorithm(
 
         pop[:] = elites + offspring
 
-        # ---- self-adaptive mutation rate update (1/5 success rule) ----
+        #Self-adaptive mutation rate update (1/5 success rule)
         if adaptive_mut:
             success_window.append(1 if best.profit > prev_best else 0)
             if len(success_window) == mut_window:
@@ -460,10 +405,7 @@ def adaptive_genetic_algorithm(
     return genetic_algorithm(problem, max_evals=max_evals, rng=rng, seed=seed, **kwargs)
 
 
-# ---------------------------------------------------------------------------
-# Registry for CLI / experiment driver
-# ---------------------------------------------------------------------------
-
+# register the algos
 ALGORITHMS: dict[str, Callable] = {
     "random": random_search,
     "hc": hill_climbing,
