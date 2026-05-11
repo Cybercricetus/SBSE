@@ -1,4 +1,13 @@
-"""Main file. parser of flags; entry.
+"""CLI entry point for Track A experiments.
+
+Examples
+--------
+# Smoke test on the small example file
+python main.py --instance data/example.txt --runs 3 --evals 5000
+
+# Full run on classic instance
+python main.py --instance data/nrp-e1.txt --runs 30 --evals 50000 \\
+    --cost-ratio 0.3 --output results/e1_r03.json
 """
 
 from __future__ import annotations
@@ -16,6 +25,7 @@ from nrp import (
     run_experiment,
     summarize,
     wilcoxon_vs_baseline,
+    vargha_delaney_a12,
 )
 from nrp.experiment import save_results
 
@@ -88,6 +98,11 @@ def main():
                   f"p={t['p_value']:.4g} {sig}  "
                   f"wins/losses/ties = {t['wins']}/{t['losses']}/{t['ties']}  "
                   f"median diff = {t['median_diff']:+.1f}")
+
+        print("\n=== Vargha-Delaney A12 effect size vs RandomSearch ===")
+        a12s = vargha_delaney_a12(results, baseline="random")
+        for name, e in a12s.items():
+            print(f"  {name:>4}  A12={e['a12']:.3f}  magnitude={e['magnitude']}")
 
     if args.output:
         out = Path(args.output)

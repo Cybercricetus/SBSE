@@ -1,3 +1,4 @@
+"""Single-objective Next Release Problem (NRP) - Track A."""
 from .problem import NRPProblem, parse_nrp_file
 from .algorithms import (
     Solution,
@@ -8,7 +9,7 @@ from .algorithms import (
     genetic_algorithm,
     adaptive_genetic_algorithm,
 )
-from .experiment import run_experiment, summarize, wilcoxon_vs_baseline
+from .experiment import run_experiment, summarize, wilcoxon_vs_baseline, vargha_delaney_a12
 
 __all__ = [
     "NRPProblem",
@@ -23,4 +24,5 @@ __all__ = [
     "run_experiment",
     "summarize",
     "wilcoxon_vs_baseline",
+    "vargha_delaney_a12",
 ]

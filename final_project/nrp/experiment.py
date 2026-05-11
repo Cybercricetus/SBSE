@@ -1,4 +1,7 @@
-"""Experiments; using Xuan's data...
+"""Experiment harness: run each algorithm multiple times, aggregate, run
+Wilcoxon signed-rank tests vs the random-search baseline.
+
+Output is JSON-serialisable so we can dump per-run history for plotting later.
 """
 
 from __future__ import annotations
@@ -15,6 +18,9 @@ from .algorithms import RunResult
 from .problem import NRPProblem
 
 
+# ---------------------------------------------------------------------------
+# Multi-run experiment
+# ---------------------------------------------------------------------------
 
 def run_experiment(
     problem: NRPProblem,
@@ -25,6 +31,12 @@ def run_experiment(
     verbose: bool = True,
     algo_kwargs: Dict[str, dict] | None = None,
 ) -> Dict[str, List[RunResult]]:
+    """Run every algorithm `n_runs` times with paired seeds.
+
+    Paired seeds (same seed for all algorithms in run-i) make the Wilcoxon
+    signed-rank test more powerful, since shared randomness in the random
+    initial solution removes some variance.
+    """
     algo_kwargs = algo_kwargs or {}
     results: Dict[str, List[RunResult]] = {name: [] for name in algorithms}
 
@@ -48,7 +60,7 @@ def run_experiment(
 
 
 # ---------------------------------------------------------------------------
-#Stats
+# Summary statistics
 # ---------------------------------------------------------------------------
 
 def summarize(results: Dict[str, List[RunResult]]) -> Dict[str, dict]:
@@ -70,7 +82,7 @@ def summarize(results: Dict[str, List[RunResult]]) -> Dict[str, dict]:
 
 
 # ---------------------------------------------------------------------------
-#Wilcoxon signed-rank tests
+# Wilcoxon signed-rank tests
 # ---------------------------------------------------------------------------
 
 def wilcoxon_vs_baseline(
@@ -114,8 +126,75 @@ def wilcoxon_vs_baseline(
     return out
 
 
+def vargha_delaney_a12(
+    results: Dict[str, List[RunResult]],
+    baseline: str = "random",
+) -> Dict[str, dict]:
+    """Vargha-Delaney A12 effect size of every algorithm vs the baseline.
+
+    A12(X, Y) = P(X > Y) + 0.5 * P(X = Y), estimated from the empirical
+    distribution of best-profit values across runs. Returns A12 plus the
+    qualitative magnitude per Vargha & Delaney (2000) thresholds.
+
+    Interpretation:
+      A12 = 0.5  : the two algorithms perform equally
+      A12 > 0.5  : algorithm X (e.g. "ga") tends to outperform the baseline
+      A12 < 0.5  : algorithm X tends to underperform the baseline
+
+    Magnitude thresholds (|A12 - 0.5|):
+      < 0.06  -> negligible
+      < 0.14  -> small
+      < 0.21  -> medium
+      >= 0.21 -> large
+
+    These thresholds are the de-facto standard in SBSE statistical analysis
+    (cf. Arcuri & Briand, "A Hitchhiker's guide to statistical tests for
+    assessing randomized algorithms in software engineering", STVR 2014).
+    """
+    if baseline not in results:
+        raise KeyError(f"baseline '{baseline}' not in results")
+
+    base_profits = np.array([r.best.profit for r in results[baseline]], dtype=float)
+    out = {}
+    for name, runs in results.items():
+        if name == baseline:
+            continue
+        algo_profits = np.array([r.best.profit for r in runs], dtype=float)
+        a12 = _a12(algo_profits, base_profits)
+        out[name] = {
+            "vs": baseline,
+            "a12": float(a12),
+            "magnitude": _a12_magnitude(a12),
+        }
+    return out
+
+
+def _a12(x: np.ndarray, y: np.ndarray) -> float:
+    """Compute Vargha-Delaney A12 via pairwise comparison.
+
+    A12 = (#{x > y} + 0.5 * #{x == y}) / (|x| * |y|)
+    """
+    # Broadcasting gives an (|x|, |y|) comparison matrix
+    diff = x[:, None] - y[None, :]
+    greater = (diff > 0).sum()
+    ties = (diff == 0).sum()
+    return (greater + 0.5 * ties) / (len(x) * len(y))
+
+
+def _a12_magnitude(a12: float) -> str:
+    """Qualitative effect-size label per Vargha & Delaney (2000)."""
+    d = abs(a12 - 0.5)
+    if d < 0.06:
+        return "negligible"
+    if d < 0.14:
+        return "small"
+    if d < 0.21:
+        return "medium"
+    return "large"
+
+
 # ---------------------------------------------------------------------------
-#SAVE to disk
+# Persistence
 # ---------------------------------------------------------------------------
 
 def save_results(results: Dict[str, List[RunResult]], path: str | Path) -> None:
