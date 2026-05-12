@@ -86,9 +86,10 @@ RATIO=0.5 RUNS=10 EVALS=20000 SEED=42 ./run.sh
 
 ## Hyperparameter Changing
 
-- For GA
+- For GA series: Open `final_project/nrp/algorithms.py` (or the exact file name) and modify the parameters in the `genetic_algorithm` function:
+
 ```python
-# GA: 修改 pop_size, mut_prob (在 genetic_algorithm 函数里)
+# GA
 def genetic_algorithm(
     problem,
     max_evals,
@@ -99,6 +100,19 @@ def genetic_algorithm(
     mut_prob: float | None = None,    # 5.0/problem.n_reqs
     tournsize: int = 3,
     elitism: int = 2,
+    ...
+)
+
+# AGA
+def adaptive_genetic_algorithm(
+    problem,
+    max_evals,
+    rng,
+    *,
+    pop_size: int = 100,        
+    mut_window: int = 5,        # sliding window
+    mut_target: float = 0.2,    # 1/5 rule, can be changed
+    mut_factor: float = 1.2,    # factor beta
     ...
 )
 ```
