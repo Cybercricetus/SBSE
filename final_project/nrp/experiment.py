@@ -130,27 +130,6 @@ def vargha_delaney_a12(
     results: Dict[str, List[RunResult]],
     baseline: str = "random",
 ) -> Dict[str, dict]:
-    """Vargha-Delaney A12 effect size of every algorithm vs the baseline.
-
-    A12(X, Y) = P(X > Y) + 0.5 * P(X = Y), estimated from the empirical
-    distribution of best-profit values across runs. Returns A12 plus the
-    qualitative magnitude per Vargha & Delaney (2000) thresholds.
-
-    Interpretation:
-      A12 = 0.5  : the two algorithms perform equally
-      A12 > 0.5  : algorithm X (e.g. "ga") tends to outperform the baseline
-      A12 < 0.5  : algorithm X tends to underperform the baseline
-
-    Magnitude thresholds (|A12 - 0.5|):
-      < 0.06  -> negligible
-      < 0.14  -> small
-      < 0.21  -> medium
-      >= 0.21 -> large
-
-    These thresholds are the de-facto standard in SBSE statistical analysis
-    (cf. Arcuri & Briand, "A Hitchhiker's guide to statistical tests for
-    assessing randomized algorithms in software engineering", STVR 2014).
-    """
     if baseline not in results:
         raise KeyError(f"baseline '{baseline}' not in results")
 
@@ -194,7 +173,7 @@ def _a12_magnitude(a12: float) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Persistence
+#Persistence storage
 # ---------------------------------------------------------------------------
 
 def save_results(results: Dict[str, List[RunResult]], path: str | Path) -> None:

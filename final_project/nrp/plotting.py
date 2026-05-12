@@ -76,11 +76,7 @@ def plot_mut_trajectory(
     title: str = "",
     n_reqs: int | None = None,
 ):
-    """Plot mut_prob trajectory across runs for any algorithm with self-adaptation.
-
-    Filters to runs whose ``meta['adaptive_mut']`` is True. Y-axis is shown
-    in units of ``k/n`` where n = problem.n_reqs, so values are interpretable
-    against the conventional 1/n default.
+    """Plot mut_prob trajectory, monitor its change
     """
     import matplotlib.pyplot as plt
 

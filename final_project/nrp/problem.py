@@ -94,7 +94,7 @@ class NRPProblem:
     cost_ratio: float
     budget: int
 
-    # Precomputed for fast vectorized evaluation
+    #Precomputed for fast vectorized evaluation
     M: csr_matrix = field(repr=False)         # (n_customers, n_reqs) incidence
     requested_count: np.ndarray = field(repr=False)  # (n_customers,) row sums
 
@@ -113,7 +113,7 @@ class NRPProblem:
         n_reqs = len(costs)
         n_cust = len(profits)
 
-        # Build sparse incidence matrix: M[i, j] = 1 iff customer i requests req j
+        # build sparse incidence matrix: M[i, j] = 1 iff customer i requests req j
         rows = np.concatenate([np.full(len(r), i) for i, r in enumerate(customer_reqs)])
         cols = np.concatenate(customer_reqs) if customer_reqs else np.array([], dtype=np.int64)
         data = np.ones(len(rows), dtype=np.int8)
